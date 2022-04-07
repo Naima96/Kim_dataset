@@ -8,12 +8,9 @@ Created on Tue Feb 22 14:41:18 2022
 import numpy as np
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
+import pickle
 
 from utility_functions2 import _find_consecutive_index_ranges,_hees_2013_calculate_non_wear_time,loop_svm,_detect_walk_sixty_sec
-
-
-# import time
-# from progressbar import ProgressBar
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -64,8 +61,10 @@ class Ambulatory_IMU(object):
         
         # data = loadmat(filename)
         # data=pd.DataFrame(data['signal'],columns=["Accx","Accy","Accz"])
+        
+        self.subject_name=filename[64:len(filename)-4]
 
-        data = scipy.io.loadmat(filename)['signal']
+        data = scipy.io.loadmat(filename)['signal']#change this into signal and remove indexing
         data=np.c_[ np.arange(0,len(data)), data  ]  
        
         # data=pd.DataFrame(mat['signal'],columns=['Accx','Accy','Accz'])
@@ -98,34 +97,35 @@ class Ambulatory_IMU(object):
         self.all_gait_segment=[None] * len(self.active_periods_IMU)
         pool=Pool(8)   
         l=0
-        for active_period in self.active_periods_IMU:
 
+        for active_period in self.active_periods_IMU:
 
             
             active_period_split=np.array_split(active_period, 
                                                len(active_period)//(60*100))
             
-            
-            
+
             print("we found %d number of 60 sec slices in active period"%(len(active_period_split)))
             
-            self.gait_segment = []
-            
-
-            # wind_step_active=np.full(shape = len(active_period), fill_value = 0, dtype = 'uint8')
-            
-            self.results=pool.map_async(_detect_walk_sixty_sec, active_period_split ).get()
+            results=pool.map_async(_detect_walk_sixty_sec, active_period_split ).get()
 
                 
-            self.all_gait_segment[l]=self.results
+            self.all_gait_segment[l]=np.concatenate(results, axis=0)
+
             
             l=l+1
             print(l)
             print("finished analysis of %d active period"%(l))
             
-            if l==2:
-                break
+            # if l==10:
+            #     break
+        
+        self.all_gait_segment=np.concatenate(self.all_gait_segment).astype('int')
 
+        
+        np.save(self.subject_name+'_steps', self.all_gait_segment)
+        
+        # tt=np.load('result_subj2.npy')
 
 
         
@@ -263,21 +263,16 @@ class Ambulatory_IMU(object):
                 activity_time[consecutive_index_non_activity[k][0]+consecutive_index_non_wear[i][0]:consecutive_index_non_activity[k][-1]+consecutive_index_non_wear[i][0]]=1
 
         return(activity_time)
-    
 
-    
-
-        
-
-    
        
 if __name__=="__main__":
     
     plt.close('all')
-    filename="d://Users//al-abiad//Desktop//kim//Naima & Thomas//sig_try.mat"
-    
+    filename="d://Users//al-abiad//Desktop//kim//Naima & Thomas//old monitor//CLE320.mat"
+    # filename="d://Users//al-abiad//Desktop//kim//Naima & Thomas//JBK411.mat"
     amb_data=Ambulatory_IMU(filename)
+    
+    # x=amb_data.active_periods_IMU
     
     amb_data.detect_walking_period()
 
-    amb_data.results

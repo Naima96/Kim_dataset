@@ -40,12 +40,8 @@ def dominant_frequency(signal_x): #100
 
     signal_x = signal_x-np.mean(signal_x)
     dim = signal_x.shape
-   
-   #valerie from matlab
     
     freq = (np.fft.fftfreq(nfft) * sampling_rate)[0:nfft2]
-   
-   #valerie from matlab
      
     lowind=np.where(freq>fmin)[0][0]
     upind=np.max(np.where(freq<fmax))
@@ -93,11 +89,6 @@ def filter_data(acc=[0],B=[],A=[]):
 @njit
 def calc_median(mag):
     return np.median(mag)
-
-
-
-
-
 
 @njit
 def _moment(a, moment, mean=None):

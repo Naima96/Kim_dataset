@@ -4,12 +4,14 @@ Created on Fri Feb 25 18:12:39 2022
 
 @author: al-abiad
 """
-from numba import jit, njit
+from numba import njit
 import numpy as np
 from SmartStep_optim_version2 import *
 from scipy import signal
 import onnxruntime as rt
 rt.set_default_logger_severity(3)
+
+import pandas as pd
 
 A = np.asarray([1, -8.99594505535417, 36.4633075498862, -87.6908102873418, 138.559912556039, -150.302116273606, 113.348650426591, -58.6790854259776, 19.9562604962225, -4.02604302102184, 0.365869040210561]);
 B = np.asarray([5.51456216845228e-12, 5.51456216845228e-11, 2.48155297580353e-10, 6.61747460214274e-10, 1.15805805537498e-09, 1.38966966644997e-09, 1.15805805537498e-09, 6.61747460214274e-10, 2.48155297580353e-10, 5.51456216845228e-11, 5.51456216845228e-12]);
@@ -17,11 +19,8 @@ sess_acc = rt.InferenceSession("acc.onnx")
 input_acc = sess_acc.get_inputs()[0].name
 
 def filter_data(acc=[0],B=[],A=[]):
-
     y = np.copy(acc)
-
     y = signal.filtfilt(B, A, y,axis=0) # fix
-   
     return y
 
         
@@ -142,10 +141,6 @@ def cal_feature_predict_step(data,data_filtered,t):
 
 
 
-
-
-
-
 def _detect_walk_sixty_sec(sixty_sec_active):
 
     gait=0
@@ -204,5 +199,15 @@ def _detect_walk_sixty_sec(sixty_sec_active):
                 print("finished %d out of 6000"%(wind_ind))
 
     print("we found %d steps"%(np.sum(wind_step)))
+    
+    wind_step=np.where(wind_step==1)[0]+sixty_sec_active[0,0]
         
     return wind_step
+
+
+
+
+
+    
+
+
